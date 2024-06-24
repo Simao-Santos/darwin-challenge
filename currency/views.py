@@ -75,9 +75,12 @@ def get_latest_rate(request):
         except ValidationError as e:
             logger.error(f"Validation Error: {e}")
             return JsonResponse({'error': str(e)}, status=400)
-        except (RuntimeError, ValueError, Exception):
+        except RuntimeError as e:
+            logger.error(f"API request failed: {e}")
+            return JsonResponse({'error': 'Server side error'}, status=504)
+        except (ValueError, Exception) as e:
             logger.error(f"An unexpected error occurred: {e}")
-            return JsonResponse({'error': 'An unexpected error occurred'})
+            return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
 
 def is_date_interval_in_db(start_date_string, end_date_string):
     try:
@@ -101,11 +104,9 @@ def is_date_interval_in_db(start_date_string, end_date_string):
         else:
             return []
         
-    except (ValueError, ValidationError) as e:
-        logger.error(f"Validation error: {e}")
+    except (ValidationError):
         raise
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
+    except (ValueError, Exception):
         raise
 
 def get_rate_average(currency_rates_in_interval):
@@ -132,9 +133,6 @@ def get_interval_display_data(start_date, end_date, currency_rates_in_interval):
 def get_interval_rate(request, start_date_string, end_date_string):
     try:
         currency_rates_in_interval = is_date_interval_in_db(start_date_string, end_date_string)
-        # if isinstance(currency_rates_in_interval, str):
-        #     error_string = currency_rates_in_interval
-        #     return JsonResponse({'error': error_string}, status=400)
         if currency_rates_in_interval:
             display_data = get_interval_display_data(start_date_string, end_date_string, currency_rates_in_interval)
 
@@ -157,7 +155,7 @@ def get_interval_rate(request, start_date_string, end_date_string):
                 currency_rates_in_interval = CurrencyRate.objects.bulk_create(currency_rate_list, ignore_conflicts=True)
             except IntegrityError as e:
                 logger.error(f"Database integrity error: {e}")
-                return JsonResponse({'error': 'An unexpected error occurred'})
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
                 
             display_data = get_interval_display_data(start_date, end_date, currency_rates_in_interval)
 
@@ -165,6 +163,9 @@ def get_interval_rate(request, start_date_string, end_date_string):
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
         return JsonResponse({'error': str(e)}, status=400)
-    except (RuntimeError, ValueError, Exception) as e:
+    except RuntimeError as e:
+        logger.error(f"API request failed: {e}")
+        return JsonResponse({'error': 'Server side error'}, status=504)
+    except (ValueError, Exception) as e:
         logger.error(f"An unexpected error occurred: {e}")
-        return JsonResponse({'error': 'An unexpected error occurred'})
+        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
