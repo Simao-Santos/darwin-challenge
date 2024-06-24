@@ -1,3 +1,4 @@
+import logging
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
@@ -6,6 +7,10 @@ from decimal import Decimal
 from datetime import datetime, timedelta, date
 
 from .models import CurrencyRate
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Constants
 FRANKFURTER_API_URL = 'https://api.frankfurter.app'
@@ -68,8 +73,10 @@ def get_latest_rate(request):
             return JsonResponse(display_data)
 
         except ValidationError as e:
+            logger.error(f"Validation Error: {e}")
             return JsonResponse({'error': str(e)}, status=400)
         except (RuntimeError, ValueError, Exception):
+            logger.error(f"An unexpected error occurred: {e}")
             return JsonResponse({'error': 'An unexpected error occurred'})
 
 def is_date_interval_in_db(start_date_string, end_date_string):
@@ -95,10 +102,10 @@ def is_date_interval_in_db(start_date_string, end_date_string):
             return []
         
     except (ValueError, ValidationError) as e:
-        print(f"Validation error: {e}")
+        logger.error(f"Validation error: {e}")
         raise
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
         raise
 
 def get_rate_average(currency_rates_in_interval):
@@ -125,9 +132,9 @@ def get_interval_display_data(start_date, end_date, currency_rates_in_interval):
 def get_interval_rate(request, start_date_string, end_date_string):
     try:
         currency_rates_in_interval = is_date_interval_in_db(start_date_string, end_date_string)
-        if isinstance(currency_rates_in_interval, str):
-            error_string = currency_rates_in_interval
-            return JsonResponse({'error': error_string}, status=400)
+        # if isinstance(currency_rates_in_interval, str):
+        #     error_string = currency_rates_in_interval
+        #     return JsonResponse({'error': error_string}, status=400)
         if currency_rates_in_interval:
             display_data = get_interval_display_data(start_date_string, end_date_string, currency_rates_in_interval)
 
@@ -149,13 +156,15 @@ def get_interval_rate(request, start_date_string, end_date_string):
             try:
                 currency_rates_in_interval = CurrencyRate.objects.bulk_create(currency_rate_list, ignore_conflicts=True)
             except IntegrityError as e:
-                print(f"Database integrity error: {e}")
+                logger.error(f"Database integrity error: {e}")
                 return JsonResponse({'error': 'An unexpected error occurred'})
                 
             display_data = get_interval_display_data(start_date, end_date, currency_rates_in_interval)
 
             return JsonResponse(display_data)
     except ValidationError as e:
+        logger.error(f"Validation error: {e}")
         return JsonResponse({'error': str(e)}, status=400)
-    except (RuntimeError, ValueError, Exception):
+    except (RuntimeError, ValueError, Exception) as e:
+        logger.error(f"An unexpected error occurred: {e}")
         return JsonResponse({'error': 'An unexpected error occurred'})
