@@ -110,6 +110,16 @@ def get_rate_average(currency_rates_in_interval):
     average = total / Decimal(len(currency_rates_in_interval))
     return average.quantize(Decimal('0.000001'))
 
+def get_display_data(start_date, end_date, currency_rates_in_interval):
+    average_rate_value = get_rate_average(currency_rates_in_interval)
+
+    display_data = {
+        'average_rate_value': average_rate_value,
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    return display_data
+
 def get_interval_rate(request, start_date_string, end_date_string):
     try:
         currency_rates_in_interval = is_date_interval_in_db(start_date_string, end_date_string)
@@ -117,13 +127,8 @@ def get_interval_rate(request, start_date_string, end_date_string):
             error_string = currency_rates_in_interval
             return JsonResponse({'error': error_string}, status=400)
         if currency_rates_in_interval:
-            average_rate_value = get_rate_average(currency_rates_in_interval)
-        
-            display_data = {
-                'average_rate_value': average_rate_value,
-                'start_date': start_date_string,
-                'end_date': end_date_string
-            }
+            display_data = get_display_data(start_date_string, end_date_string, currency_rates_in_interval)
+
             return JsonResponse(display_data)
         else:
             interval_endpoint = f"{FRANKFURTER_API_URL}/{start_date_string}..{end_date_string}?to={CURRENCY}"
@@ -144,13 +149,8 @@ def get_interval_rate(request, start_date_string, end_date_string):
             except IntegrityError as e:
                 print(f"Database integrity error: {e}")
                 
-            average_rate_value = get_rate_average(currency_rates_in_interval)
-        
-            display_data = {
-                'average_rate_value': average_rate_value,
-                'start_date': start_date,
-                'end_date': end_date
-            }
+            display_data = get_display_data(start_date, end_date, currency_rates_in_interval)
+
             return JsonResponse(display_data)
     except (RuntimeError, ValueError, ValidationError) as e:
         return JsonResponse({'error': str(e)}, status=500)
