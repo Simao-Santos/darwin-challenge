@@ -19,7 +19,7 @@ def home(request):
 def parse_date(date_string):
     try:
         return datetime.strptime(date_string, DATE_FORMAT).date()
-    except ValueError as e:
+    except ValueError:
         raise ValidationError(f"Invalid date format: {date_string}, expected format: {DATE_FORMAT}")
 
 def fetch_rate_from_api(endpoint):
@@ -67,8 +67,10 @@ def get_latest_rate(request):
 
             return JsonResponse(display_data)
 
-        except (RuntimeError, ValueError, ValidationError) as e:
-            return JsonResponse({'error': str(e)}, status=500)
+        except ValidationError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        except (RuntimeError, ValueError, Exception):
+            return JsonResponse({'error': 'An unexpected error occurred'})
 
 def is_date_interval_in_db(start_date_string, end_date_string):
     try:
@@ -94,10 +96,10 @@ def is_date_interval_in_db(start_date_string, end_date_string):
         
     except (ValueError, ValidationError) as e:
         print(f"Validation error: {e}")
-        return str(e)
+        raise
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return str(e)
+        raise
 
 def get_rate_average(currency_rates_in_interval):
     if not currency_rates_in_interval:
@@ -148,12 +150,12 @@ def get_interval_rate(request, start_date_string, end_date_string):
                 currency_rates_in_interval = CurrencyRate.objects.bulk_create(currency_rate_list, ignore_conflicts=True)
             except IntegrityError as e:
                 print(f"Database integrity error: {e}")
+                return JsonResponse({'error': 'An unexpected error occurred'})
                 
             display_data = get_interval_display_data(start_date, end_date, currency_rates_in_interval)
 
             return JsonResponse(display_data)
-    except (RuntimeError, ValueError, ValidationError) as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except (RuntimeError, ValueError, Exception):
+        return JsonResponse({'error': 'An unexpected error occurred'})
