@@ -16,9 +16,9 @@ http://localhost:8000/
 ## Endpoints
 - http://localhost:8000/latest for today's currency rate.
 It returns a JSON with the rate value for the current date and the corresponding date. If it is before 16:00 CET the date and value will be of the previous day.
-- http://localhost:8000/YYYY-MM-DD..YYYY-MM-DD/ for the currency rates between 2 dates. For example: http://localhost:8000/2004-01-01..2014-01-01/. It returns a JSON for the average rate value and the corresponding start and end date that are returned from the Frankfurter API. Sometimes the Frankfurter API will respond with dates near the requested ones so the requested dates will not match the dates in the JSON.
+- http://localhost:8000/interval/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD for the currency rates between 2 dates. For example: http://localhost:8000/interval/?start_date=2023-01-01&end_date=2024-01-01. It returns a JSON for the average rate value and the corresponding start and end date that are returned from the Frankfurter API. Sometimes the Frankfurter API will respond with dates near the requested ones so the requested dates will not match the dates in the JSON.
 
 ## Tests
-To run the application tests run the command: 
+To run the application's tests run the command: 
 
 `docker-compose up --build tests`
