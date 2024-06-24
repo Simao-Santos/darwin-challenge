@@ -130,8 +130,13 @@ def get_interval_display_data(start_date, end_date, currency_rates_in_interval):
     }
     return display_data
 
-def get_interval_rate(request, start_date_string, end_date_string):
+def get_interval_rate(request):
     try:
+        start_date_string = request.GET.get('start_date')
+        end_date_string = request.GET.get('end_date')
+        if not start_date_string or not end_date_string:
+            error_message = "Missing 'start_date' or 'end_date' query parameters."
+            return JsonResponse({'error': error_message}, status=400)
         currency_rates_in_interval = is_date_interval_in_db(start_date_string, end_date_string)
         if currency_rates_in_interval:
             display_data = get_interval_display_data(start_date_string, end_date_string, currency_rates_in_interval)
