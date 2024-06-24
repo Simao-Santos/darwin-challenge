@@ -24,5 +24,15 @@ services:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
 
+  tests:
+    build: .
+    command: python manage.py test
+    volumes:
+      - .:/darwin-app
+    env_file:
+      - .env
+    depends_on:
+      - db
+
 volumes:
   postgres_data:
