@@ -110,7 +110,7 @@ def get_rate_average(currency_rates_in_interval):
     average = total / Decimal(len(currency_rates_in_interval))
     return average.quantize(Decimal('0.000001'))
 
-def get_display_data(start_date, end_date, currency_rates_in_interval):
+def get_interval_display_data(start_date, end_date, currency_rates_in_interval):
     average_rate_value = get_rate_average(currency_rates_in_interval)
 
     display_data = {
@@ -127,7 +127,7 @@ def get_interval_rate(request, start_date_string, end_date_string):
             error_string = currency_rates_in_interval
             return JsonResponse({'error': error_string}, status=400)
         if currency_rates_in_interval:
-            display_data = get_display_data(start_date_string, end_date_string, currency_rates_in_interval)
+            display_data = get_interval_display_data(start_date_string, end_date_string, currency_rates_in_interval)
 
             return JsonResponse(display_data)
         else:
@@ -149,7 +149,7 @@ def get_interval_rate(request, start_date_string, end_date_string):
             except IntegrityError as e:
                 print(f"Database integrity error: {e}")
                 
-            display_data = get_display_data(start_date, end_date, currency_rates_in_interval)
+            display_data = get_interval_display_data(start_date, end_date, currency_rates_in_interval)
 
             return JsonResponse(display_data)
     except (RuntimeError, ValueError, ValidationError) as e:
